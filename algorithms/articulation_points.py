@@ -1,41 +1,48 @@
+from collections import defaultdict
+
 from graph_and_additional_classes import *
-from . import dfs_finder
 
 
-class ArticulationPointsFinder(dfs_finder.DfsFinder):
+class ArticulationPointsFinder:
     def __init__(self):
-        super().__init__()
-        self.roots_children_count = 0
+        self.time = 0
+        self.visited = defaultdict(lambda: False)
+        self.up: Dict[Node, int] = {}
+        self.tin: Dict[Node, int] = {}
+
+    def _dfs(self, node: Node, parent: Node = None) -> Set[Node]:
+        self.time += 1
+        self.up[node] = self.tin[node] = self.time
+        self.visited[node] = True
+        articulation_points = set()
+
+        childerns_count = 0
+        for incident_node in node.children:
+            if incident_node == parent:
+                continue
+            if self.visited[incident_node]:
+                self.up[node] = min(self.up[node], self.tin[incident_node])
+            else:
+                articulation_points.update(self._dfs(incident_node, node))
+                childerns_count += 1
+                self.up[node] = min(self.up[node], self.up[incident_node])
+
+                if parent is not None and self.up[incident_node] >= self.tin[node]:
+                    articulation_points.add(node)
+
+        if parent is None and childerns_count >= 2:
+            articulation_points.add(node)
+
+        return articulation_points
 
     def find(self, graph: Graph):
-        return set(super().find(graph))
+        articulation_points = set()
 
-    def _find_sought_entities_by_dfs(self, node: Node, parent: Node = None):
-        if parent is None:
-            self.roots_children_count = 0
+        for node in graph:
+            if not self.visited[node]:
+                articulation_points.update(self._dfs(node))
 
-        result = super()._find_sought_entities_by_dfs(node, parent)
-
-        if parent is None and self.roots_children_count >= 2:
-            result.append(node)
-
-        return result
-
-    def _get_updated_sought_entities(
-            self, current_sought_entities, parent, current_node, next_node):
-
-        if self.visited[next_node]:
-            self.up[current_node] = min(self.up[current_node], self.tin[next_node])
-        else:
-            current_sought_entities += self._find_sought_entities_by_dfs(next_node, current_node)
-            self.up[current_node] = min(self.up[current_node], self.up[next_node])
-
-            if parent is None:
-                self.roots_children_count += 1
-            elif self.up[next_node] >= self.tin[current_node]:
-                current_sought_entities.append(current_node)
-
-        return current_sought_entities
+        return articulation_points
 
 
 # https://e-maxx.ru/algo/cutpoints
