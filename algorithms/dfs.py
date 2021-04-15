@@ -37,7 +37,11 @@ d = defaultdict(list)
 for v, k in graph:
     d[v].append(k)
     d[k].append(v)
-for v in V:
-    if num[v] == 0:
-        father[v] = 0
-        dfs(v)
+
+dfs(2)
+print(T)
+print(B)
+# for v in V:
+#     if num[v] == 0:
+#         father[v] = 0
+#         dfs(v)
